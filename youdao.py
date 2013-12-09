@@ -17,13 +17,12 @@ class Page(QWebPage):
     def __init__(self, url):
         QWebPage.__init__(self)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
-        self.connect(self, SIGNAL('loadFinished(bool)'), self._finished_loading)
+        #self.connect(self, SIGNAL('loadFinished(bool)'), self._clean_page)
+        self.connect(self, SIGNAL('loadStarted(bool)'), self._clean_page)
         self.mainFrame().load(QUrl(url))
 
-    def _finished_loading(self, result):
-        self.clean_page();
-
-    def clean_page(self):
+    def _clean_page(self, result):
+        print 'page: clean page'
         frame = self.mainFrame()
         divList = frame.findAllElements('div')
         cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
@@ -37,6 +36,8 @@ class Page(QWebPage):
                 div.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
             if div.attribute('id') == 'container':
                 div.setAttribute('style', 'margin: 0px auto; width: 550px');
+
+        self.contentsChanged.emit()
 
     def setValue(self, word):
         if word:
@@ -54,24 +55,20 @@ class Browser(QWebView):
         QWebView.__init__(self)
         self.loadFinished.connect(self._result_available)
 
-    def _result_available(self, ok):
-        frame = self.page().mainFrame()
+    def _result_available(self):
+        print "browser: clean page"
+        #frame = self.page().mainFrame()
         self.clean_page();
-        self.show()
+        self.page().contentsChanged.emit()
+        #self.update()
+        #self.show()
         #print unicode(frame.toHtml()).encode('utf-8')
 
     def clean_page(self):
         frame = self.page().mainFrame()
-        #divList = frame.findAllElements('div')
         divList = frame.findAllElements('div')
-        #result = [div for div in divList if div.attribute('id') == 'results-contents'][0]
-        #result.takeFromDocument()
-        #frame.documentElement().removeAllChildren()
-        #frame.documentElement().appendInside(result)
         cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
         cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
-        #[div.setAttribute('style','display: none') for div in divList if div.attribute('class') in cleanCLASS or div.attribute('id') in cleanID]
-        #[div.removeFromDocument() for div in divList if div.attribute('class') in cleanCLASS or div.attribute('id') in cleanID]
         for div in divList:
             if div.attribute('class') in cleanCLASS:
                 div.setAttribute('style', 'display: none');
@@ -103,6 +100,7 @@ class Window(QWidget):
         #self.page = Page(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
         #self.view = QWebView(self)
         #self.view.setPage(self.page)
+        self.view.show()
 
         layout = QVBoxLayout(self)
         layout.setMargin(0)
@@ -115,11 +113,13 @@ class Window(QWidget):
         if text in quit:
             self.close()
 
-        self.cmd.hide()
-        self.cmd.clear()
-        self.view.setFocus(Qt.OtherFocusReason)
-        self.view.setValue(text)
-        self.view.page().mainFrame().evaluateJavaScript('f.submit()')
+        if text:
+            self.cmd.hide()
+            self.cmd.clear()
+            self.view.setValue(text)
+            self.view.page().mainFrame().evaluateJavaScript('f.submit()')
+            self.view.setFocus(Qt.OtherFocusReason)
+            #self.page().mainFrame().evaluateJavaScript('f.submit()')
 
 
     def keyPressEvent(self, event):
@@ -138,6 +138,7 @@ class Window(QWidget):
             self.cmd.setFocus(Qt.OtherFocusReason)
         if key == Qt.Key_Escape:
             self.cmd.hide()
+            self.view.setFocus(Qt.OtherFocusReason)
             
 def onLoadFinished(result):
     src = unicode(webpage.mainFrame().toHtml()).encode('utf-8')
