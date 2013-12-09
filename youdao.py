@@ -54,8 +54,15 @@ class Browser(QWebView):
     def __init__(self):
         QWebView.__init__(self)
         self.loadFinished.connect(self._result_available)
+        #self.loadProgress.connect(self._progress)
+        #self.loadStarted.connect(self._result_available)
 
-    def _result_available(self):
+    def _progress(self, percent):
+        if percent == 30:
+            print "progress"
+            self._result_available(True)
+
+    def _result_available(self, result):
         print "browser: clean page"
         #frame = self.page().mainFrame()
         self.clean_page();
@@ -101,6 +108,8 @@ class Window(QWidget):
         #self.view = QWebView(self)
         #self.view.setPage(self.page)
         self.view.show()
+        self.mgr = self.view.page().networkAccessManager();
+        self.mgr.finished.connect(self.view.clean_page)
 
         layout = QVBoxLayout(self)
         layout.setMargin(0)
