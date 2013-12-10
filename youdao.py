@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys
 from PyQt4.QtGui import *
@@ -7,7 +8,6 @@ from PyQt4.QtWebKit import *
 
 from BeautifulSoup import BeautifulSoup
 import urllib2
-import signal
 
 view = None
 app = None
@@ -50,9 +50,12 @@ class Page(QWebPage):
 
 
 class Browser(QWebView):
-
+    unameAvailable = pyqtSignal(['QString'])
     def __init__(self):
         QWebView.__init__(self)
+        self.uname = ''
+        self.wordbook = None 
+        self.login = None
         self.loadFinished.connect(self._result_available)
         #self.loadProgress.connect(self._progress)
         #self.loadStarted.connect(self._result_available)
@@ -64,27 +67,55 @@ class Browser(QWebView):
 
     def _result_available(self, result):
         print "browser: clean page"
-        #frame = self.page().mainFrame()
         self.clean_page();
         self.page().contentsChanged.emit()
+        self.wordbook = self.page().mainFrame().findFirstElement("span[class='wordbook']")
         #self.update()
         #self.show()
-        #print unicode(frame.toHtml()).encode('utf-8')
 
     def clean_page(self):
         frame = self.page().mainFrame()
-        divList = frame.findAllElements('div')
-        cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
+        cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', \
+                'result_navigator', 'rel-search', 'container', 'results-contents'] 
         cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
-        for div in divList:
-            if div.attribute('class') in cleanCLASS:
-                div.setAttribute('style', 'display: none');
-            if div.attribute('id') in cleanID:
-                div.setAttribute('style', 'display: none');
-            if div.attribute('id') == 'results-contents':
-                div.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
-            if div.attribute('id') == 'container':
-                div.setAttribute('style', 'margin: 0px auto; width: 550px');
+        for ID in cleanID:
+            element = frame.findFirstElement("div[id='%s']"%ID)
+            if element.attribute('id') == 'results-contents':
+                element.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
+            elif element.attribute('id') == 'container':
+                element.setAttribute('style', 'margin: 0px auto; width: 550px');
+            else:
+                element.setAttribute('style', 'display: none');
+        for CLASS in cleanCLASS:
+            element = frame.findFirstElement("div[class='%s']"%CLASS)
+            element.setAttribute('style', 'display: none');
+            print element.attribute('class')
+            if element.attribute('class') == 'c-sust':
+                ele = element.firstChild()
+                if ele.attribute('href'):
+                    self.login = ele
+                elif ele.attribute('id') == 'uname':
+                    self.uname = ele.toPlainText()
+                    self.unameAvailable.emit(self.uname)
+        #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
+        #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
+        #divList = frame.findAllElements('div')
+        #for div in divList:
+        #    if div.attribute('class') in cleanCLASS:
+        #        div.setAttribute('style', 'display: none');
+        #    if div.attribute('id') in cleanID:
+        #        div.setAttribute('style', 'display: none');
+        #    if div.attribute('id') == 'results-contents':
+        #        div.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
+        #    if div.attribute('id') == 'container':
+        #        div.setAttribute('style', 'margin: 0px auto; width: 550px');
+        #    if div.attribute('class') == 'c-sust':
+        #        ele = div.firstChild()
+        #        if ele.attribute('href'):
+        #            self.login = ele
+        #        elif ele.attribute('id') == 'uname':
+        #            self.uname = ele.toPlainText()
+        #            self.unameAvailable.emit(self.uname)
 
     def setValue(self, word):
         if word:
@@ -103,6 +134,7 @@ class Window(QWidget):
         self.cmd.returnPressed.connect(self.search)
         self.cmd.hide()
         self.view = Browser()
+        self.view.unameAvailable.connect(self.getUserName)
         self.view.load(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
         #self.page = Page(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
         #self.view = QWebView(self)
@@ -115,12 +147,40 @@ class Window(QWidget):
         layout.setMargin(0)
         layout.addWidget(self.view)
         layout.addWidget(self.cmd)
+        self.setWindowTitle(u'有道词典')
+
+    def getUserName(self, uname):
+        if uname:
+            title = u'%s @ 有道词典' % uname
+            self.setWindowTitle(title)
 
     def search(self):
         text = self.cmd.text()
         quit = ('q', 'quit')
         if text in quit:
             self.close()
+
+        if text == 'login':
+            if not self.view.uname:
+                self.view.login.evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
+                        evObj.initEvent( 'click', true, true ); \
+                        this.dispatchEvent(evObj);")
+            else:
+                print 'Already loged in'
+            self.cmd.hide()
+            return
+
+        if text == 'wordbook':
+            if self.view.uname:
+                import webbrowser
+                url = self.view.wordbook.parent().attribute('href')
+                print url
+                webbrowser.open_new_tab(url)
+            else:
+                print 'Not login yet'
+            
+            self.cmd.hide()
+            return
 
         if text:
             self.cmd.hide()
@@ -149,25 +209,6 @@ class Window(QWidget):
             self.cmd.hide()
             self.view.setFocus(Qt.OtherFocusReason)
             
-def onLoadFinished(result):
-    src = unicode(webpage.mainFrame().toHtml()).encode('utf-8')
-    soup = BeautifulSoup(src)
-
-    #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads'] 
-    #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
-    #for s in cleanID:
-    #    element = soup.find('div', {'id':s})
-    #    if element:
-    #        element.extract()
-    #for s in cleanCLASS:
-    #    element = soup.find('div', attrs={'class':s})
-    #    if element:
-    #        element.extract()
-
-    html = soup.prettify()
-    view.setHtml(html)
-
-
 if __name__ == '__main__':
 
     #f = urllib2.urlopen('http://dict.youdao.com/search?q=linux&keyfrom=dict.index')
