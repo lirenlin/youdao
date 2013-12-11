@@ -56,6 +56,8 @@ class Browser(QWebView):
         self.uname = ''
         self.wordbook = None 
         self.login = None
+        self.opWB = None
+
         self.loadFinished.connect(self._result_available)
         #self.loadProgress.connect(self._progress)
         #self.loadStarted.connect(self._result_available)
@@ -76,18 +78,18 @@ class Browser(QWebView):
     def clean_page(self):
         currentURL = self.url().toString()
         frame = self.page().mainFrame()
-	    if 'account.youdao.com/login' in currentURL:
-		    cleanID = ['b']
-		    cleanCLASS = ['content', 'link', 'login_left', 'hr', 'clr'] 
-		    for ID in cleanID:
-		        element = frame.findFirstElement("div[id='%s']"%ID)
+	if 'account.youdao.com/login' in currentURL:
+	    cleanID = ['b']
+	    cleanCLASS = ['content', 'link', 'login_left', 'hr', 'clr'] 
+	    for ID in cleanID:
+	        element = frame.findFirstElement("div[id='%s']"%ID)
+	        element.setAttribute('style', 'display: none');
+	    for CLASS in cleanCLASS:
+	        element = frame.findFirstElement("div[class='%s']"%ID)
+	        if element.attribute('class') == 'content':
+		        element.setAttribute('style', 'width: 290px');
+	        else:
 		        element.setAttribute('style', 'display: none');
-		    for CLASS in cleanCLASS:
-		        element = frame.findFirstElement("div[class='%s']"%ID)
-		        if element.attribute('class') == 'content':
-			        element.setAttribute('style', 'width: 290px');
-		        else:
-			        element.setAttribute('style', 'display: none');
         elif 'dict.youdao.com' in currentURL:
             cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', \
                     'result_navigator', 'rel-search', 'container', 'results-contents'] 
@@ -111,6 +113,13 @@ class Browser(QWebView):
                     elif ele.attribute('id') == 'uname':
                         self.uname = ele.toPlainText()
                         self.unameAvailable.emit(self.uname)
+                        
+        element = frame.findFirstElement("a[id=wordbook]")
+        if element:
+        	if element.attribute('class') == 'add_to_wordbook':
+        		self.opWB = element
+		elif element.attribute('class') == 'remove_from_wordbook':
+			self.opWB = element
         #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
         #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
         #divList = frame.findAllElements('div')
@@ -183,7 +192,15 @@ class Window(QWidget):
                 print 'Already loged in'
             self.cmd.hide()
             return
+            
+	if text == 'add':
+            self.view.opWB.evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
+                    evObj.initEvent( 'click', true, true ); \
+                    this.dispatchEvent(evObj);")
 
+            self.cmd.hide()
+            return
+            
         if text == 'wordbook':
             if self.view.uname:
                 import webbrowser
@@ -191,7 +208,7 @@ class Window(QWidget):
                 print url
                 webbrowser.open_new_tab(url)
             else:
-                print 'Not login yet'
+                print 'Not login yet!'
             
             self.cmd.hide()
             return
