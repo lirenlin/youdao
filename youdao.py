@@ -74,29 +74,43 @@ class Browser(QWebView):
         #self.show()
 
     def clean_page(self):
+        currentURL = self.url().toString()
         frame = self.page().mainFrame()
-        cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', \
-                'result_navigator', 'rel-search', 'container', 'results-contents'] 
-        cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
-        for ID in cleanID:
-            element = frame.findFirstElement("div[id='%s']"%ID)
-            if element.attribute('id') == 'results-contents':
-                element.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
-            elif element.attribute('id') == 'container':
-                element.setAttribute('style', 'margin: 0px auto; width: 550px');
-            else:
+	    if 'account.youdao.com/login' in currentURL:
+		    cleanID = ['t', 'b']
+		    cleanCLASS = ['content', 'login_left', 'hr', 'clr'] 
+		    for ID in cleanID:
+		        element = frame.findFirstElement("div[id='%s']"%ID)
+		        element.setAttribute('style', 'display: none');
+		    for CLASS in cleanCLASS:
+		        element = frame.findFirstElement("div[class='%s']"%ID)
+		        if element.attribute('class') == 'content':
+			        element.setAttribute('style', 'margin: 0px auto; width: 300px');
+		        else:
+			        element.setAttribute('style', 'display: none');
+        elif 'dict.youdao.com' in currentURL:
+            cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', \
+                    'result_navigator', 'rel-search', 'container', 'results-contents'] 
+            cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
+            for ID in cleanID:
+                element = frame.findFirstElement("div[id='%s']"%ID)
+                if element.attribute('id') == 'results-contents':
+                    element.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
+                elif element.attribute('id') == 'container':
+                    element.setAttribute('style', 'margin: 0px auto; width: 550px');
+                else:
+                    element.setAttribute('style', 'display: none');
+            for CLASS in cleanCLASS:
+                element = frame.findFirstElement("div[class='%s']"%CLASS)
                 element.setAttribute('style', 'display: none');
-        for CLASS in cleanCLASS:
-            element = frame.findFirstElement("div[class='%s']"%CLASS)
-            element.setAttribute('style', 'display: none');
-            print element.attribute('class')
-            if element.attribute('class') == 'c-sust':
-                ele = element.firstChild()
-                if ele.attribute('href'):
-                    self.login = ele
-                elif ele.attribute('id') == 'uname':
-                    self.uname = ele.toPlainText()
-                    self.unameAvailable.emit(self.uname)
+                print element.attribute('class')
+                if element.attribute('class') == 'c-sust':
+                    ele = element.firstChild()
+                    if ele.attribute('href'):
+                        self.login = ele
+                    elif ele.attribute('id') == 'uname':
+                        self.uname = ele.toPlainText()
+                        self.unameAvailable.emit(self.uname)
         #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
         #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
         #divList = frame.findAllElements('div')
