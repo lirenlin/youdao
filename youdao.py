@@ -77,15 +77,15 @@ class Browser(QWebView):
         currentURL = self.url().toString()
         frame = self.page().mainFrame()
 	    if 'account.youdao.com/login' in currentURL:
-		    cleanID = ['t', 'b']
-		    cleanCLASS = ['content', 'login_left', 'hr', 'clr'] 
+		    cleanID = ['b']
+		    cleanCLASS = ['content', 'link', 'login_left', 'hr', 'clr'] 
 		    for ID in cleanID:
 		        element = frame.findFirstElement("div[id='%s']"%ID)
 		        element.setAttribute('style', 'display: none');
 		    for CLASS in cleanCLASS:
 		        element = frame.findFirstElement("div[class='%s']"%ID)
 		        if element.attribute('class') == 'content':
-			        element.setAttribute('style', 'margin: 0px auto; width: 300px');
+			        element.setAttribute('style', 'width: 290px');
 		        else:
 			        element.setAttribute('style', 'display: none');
         elif 'dict.youdao.com' in currentURL:
