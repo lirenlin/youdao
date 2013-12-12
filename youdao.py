@@ -14,9 +14,24 @@ class Browser(QWebView):
         self.wordbook = None 
         self.login = None
         self.opWB = None
-
         QWebView.__init__(self)
+        self._showStartPage()
         #self.loadFinished.connect(self._result_available)
+
+    def _showStartPage(self):
+        startPage = u'''
+        <html>
+        <body>
+        <h1 align="center">有道词典</h1>
+
+        <p align="center">搜索：word</p>
+        <p align="center">登陆：login</p>
+        <p align="center">添加：add</p>
+        <p align="center">退出：quit</p>
+        </body>
+        </html>'''
+        self.setHtml(startPage)
+        self.start = True
 
     def _result_available(self, result):
         print "browser: clean page"
@@ -111,7 +126,7 @@ class Window(QWidget):
         self.cmd.hide()
         self.view = Browser()
         self.view.unameAvailable.connect(self.getUserName)
-        self.view.load(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
+        #self.view.load(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
         self.view.show()
         self.mgr = self.view.page().networkAccessManager();
         self.mgr.finished.connect(self.view.clean_page)
