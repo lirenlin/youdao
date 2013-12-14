@@ -10,6 +10,7 @@ class Browser(QWebView):
     unameAvailable = pyqtSignal(['QString'])
 
     def __init__(self):
+        self.baseUrl = 'http://dict.youdao.com/search?q=%s&keyfrom=dict.index'
         self.uname = ''
         self.wordbook = None 
         self.login = None
@@ -66,7 +67,7 @@ class Browser(QWebView):
                 if element.attribute('id') == 'results-contents':
                     element.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
                 elif element.attribute('id') == 'container':
-                    element.setAttribute('style', 'margin: 0px auto; width: 550px');
+                    element.setAttribute('style', 'margin: 0px auto; width: 560px');
                 else:
                     element.setAttribute('style', 'display: none');
             for CLASS in cleanCLASS:
@@ -108,7 +109,7 @@ class Browser(QWebView):
         #            self.uname = ele.toPlainText()
         #            self.unameAvailable.emit(self.uname)
 
-    def setValue(self, word):
+    def _setValue(self, word):
         if word:
             frame = self.page().mainFrame()
             elementList = frame.findAllElements('input')
@@ -116,6 +117,16 @@ class Browser(QWebView):
                 if element.attribute('id') == 'query':
                     element.setAttribute('value', word)
                     break
+
+    def searchWord(self, word):
+        if word:
+            if self.start:
+                self.load(QUrl(self.baseUrl%word))
+                self.start = False
+            else:
+                self._setValue(word)
+                self.page().mainFrame().evaluateJavaScript('f.submit()')
+
 
 
 class Window(QWidget):
@@ -181,11 +192,8 @@ class Window(QWidget):
         if text:
             self.cmd.hide()
             self.cmd.clear()
-            self.view.setValue(text)
-            self.view.page().mainFrame().evaluateJavaScript('f.submit()')
+            self.view.searchWord(text)
             self.view.setFocus(Qt.OtherFocusReason)
-            #self.page().mainFrame().evaluateJavaScript('f.submit()')
-
 
     def keyPressEvent(self, event):
         key = event.key()
