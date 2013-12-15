@@ -102,25 +102,6 @@ class Browser(QWebView):
             for href in navHref:
                 element = frame.findFirstElement("a[href='%s']"%href)
                 self.navigate.append(element)
-        #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
-        #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
-        #divList = frame.findAllElements('div')
-        #for div in divList:
-        #    if div.attribute('class') in cleanCLASS:
-        #        div.setAttribute('style', 'display: none');
-        #    if div.attribute('id') in cleanID:
-        #        div.setAttribute('style', 'display: none');
-        #    if div.attribute('id') == 'results-contents':
-        #        div.setAttribute('style', 'margin-left: 10px; margin-right: 10px; position:relative');
-        #    if div.attribute('id') == 'container':
-        #        div.setAttribute('style', 'margin: 0px auto; width: 550px');
-        #    if div.attribute('class') == 'c-sust':
-        #        ele = div.firstChild()
-        #        if ele.attribute('href'):
-        #            self.login = ele
-        #        elif ele.attribute('id') == 'uname':
-        #            self.uname = ele.toPlainText()
-        #            self.unameAvailable.emit(self.uname)
 
     def _setValue(self, word):
         if word:
@@ -155,7 +136,6 @@ class Window(QWidget):
         self.cmd.hide()
         self.view = Browser()
         self.view.unameAvailable.connect(self.getUserName)
-        #self.view.load(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
         self.view.show()
         self.mgr = self.view.page().networkAccessManager();
         self.mgr.finished.connect(self.view.clean_page)
@@ -248,25 +228,6 @@ class Window(QWidget):
                 self.view.navigateTo(3)
             
 if __name__ == '__main__':
-
-    #f = urllib2.urlopen('http://dict.youdao.com/search?q=linux&keyfrom=dict.index')
-    #s = f.read()
-    #src = s.decode('utf-8').encode('utf-8')
-    #soup = BeautifulSoup(f)
-    #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads'] 
-    #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
-    #for s in cleanID:
-    #    element = soup.find('div', {'id':s})
-    #    if element:
-    #        element.extract()
-    #for s in cleanCLASS:
-    #    element = soup.find('div', attrs={'class':s})
-    #    if element:
-    #        element.extract()
-
-    #header = soup.findAll('html')
-    #header[0]['class'] = 'ua-sf ua-sf ua-wk ua-linux'
-    #html = soup.prettify()
 
     app = QApplication(sys.argv)
     win = Window()
