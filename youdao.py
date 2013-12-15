@@ -131,12 +131,16 @@ class Browser(QWebView):
 class Window(QWidget):
     def __init__(self):
         super(Window, self).__init__()
+
         self.cmd = QLineEdit(self)
         self.cmd.returnPressed.connect(self.search)
         self.cmd.hide()
+
         self.view = Browser()
         self.view.unameAvailable.connect(self.getUserName)
         self.view.show()
+        #self.view.load(QUrl('http://dict.youdao.com/search?q=linux&keyfrom=dict.index'))
+
         self.mgr = self.view.page().networkAccessManager();
         self.mgr.finished.connect(self.view.clean_page)
 
