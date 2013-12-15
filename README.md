@@ -14,14 +14,21 @@
 快捷键：
 ------
 j，k：	类vim导航
+
 ctrl-f, ctrl-b：下一页，上一页
+
 0,1,2,3: 搜索结果导航
 
 ':':	进入命令模式，下方出现输入框
+
 直接输入单词：搜索单词
+
 login: 	登陆
+
 add：	加入到单词本（只有登陆后）
+
 q/quit：推出
+
 ![Start Page](screenshot/startpage.png "")
 ![Main Window](screenshot/main_window.png "")
 ![Login Window](screenshot/login.png "")
