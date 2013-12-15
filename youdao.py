@@ -15,6 +15,7 @@ class Browser(QWebView):
         self.wordbook = None 
         self.login = None
         self.opWB = None
+        self.navigate = list()
         QWebView.__init__(self)
         self._showStartPage()
         #self.loadFinished.connect(self._result_available)
@@ -29,6 +30,12 @@ class Browser(QWebView):
         <p align="center">登陆：login</p>
         <p align="center">添加：add</p>
         <p align="center">退出：quit</p>
+
+        <p align="center">下一页：Ctrl-f</p>
+        <p align="center">上一页：Ctrl-b</p>
+        <p align="center">i，j：next/previous line</p>
+        <p align="center">0：释义,  1：权威词典</p>
+        <p align="center">2：例句,  3：百科</p>
         </body>
         </html>'''
         self.setHtml(startPage)
@@ -89,6 +96,12 @@ class Browser(QWebView):
                     self.opWB = element
                 elif element.attribute('class') == 'remove_from_wordbook':
                     self.opWB = element
+
+            navHref = ['#', '#authTrans', '#examples', '#eBaike']
+            self.navigate = list()
+            for href in navHref:
+                element = frame.findFirstElement("a[href='%s']"%href)
+                self.navigate.append(element)
         #cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', 'result_navigator', 'rel-search'] 
         #cleanCLASS = ['c-topbar c-subtopbar', 'c-header', 'c-bsearch'] 
         #divList = frame.findAllElements('div')
@@ -127,6 +140,11 @@ class Browser(QWebView):
                 self._setValue(word)
                 self.page().mainFrame().evaluateJavaScript('f.submit()')
 
+    def navigateTo(self, num):
+        if 0 <= num < 4:
+            self.navigate[num].evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
+                    evObj.initEvent( 'click', true, true ); \
+                    this.dispatchEvent(evObj);")
 
 
 class Window(QWidget):
@@ -169,7 +187,7 @@ class Window(QWidget):
             self.cmd.hide()
             return
             
-	if text == 'add':
+        if text == 'add':
             self.view.opWB.evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
                     evObj.initEvent( 'click', true, true ); \
                     this.dispatchEvent(evObj);")
@@ -199,9 +217,11 @@ class Window(QWidget):
         key = event.key()
         if event.modifiers() == Qt.ControlModifier:
             if key == Qt.Key_F:
-                print 'forward'
+                nextPage = QKeyEvent(QEvent.KeyPress, Qt.Key_PageDown, Qt.NoModifier)
+                QCoreApplication.sendEvent(self.view.page(), nextPage)
             if key == Qt.Key_B:
-                print 'backward'
+                prevPage = QKeyEvent(QEvent.KeyPress, Qt.Key_PageUp, Qt.NoModifier)
+                QCoreApplication.sendEvent(self.view, prevPage)
         else:
             if key == Qt.Key_J:
                 self.view.page().mainFrame().scroll(0,15)
@@ -218,6 +238,14 @@ class Window(QWidget):
             if key == Qt.Key_Escape:
                 self.cmd.hide()
                 self.view.setFocus(Qt.OtherFocusReason)
+            if key == Qt.Key_0:
+                self.view.navigateTo(0)
+            if key == Qt.Key_1:
+                self.view.navigateTo(1)
+            if key == Qt.Key_2:
+                self.view.navigateTo(2)
+            if key == Qt.Key_3:
+                self.view.navigateTo(3)
             
 if __name__ == '__main__':
 
