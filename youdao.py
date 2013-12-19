@@ -33,7 +33,7 @@ class Browser(QWebView):
 
         <p align="center">下一页：Ctrl-f</p>
         <p align="center">上一页：Ctrl-b</p>
-        <p align="center">i，j：next/previous line</p>
+        <p align="center">i，j，G，gg：next/previous line, End, Home</p>
         <p align="center">0：释义,  1：权威词典</p>
         <p align="center">2：例句,  3：百科</p>
         </body>
@@ -149,6 +149,7 @@ class Window(QWidget):
         layout.addWidget(self.view)
         layout.addWidget(self.cmd)
         self.setWindowTitle(u'有道词典')
+        self.numPress = 0
 
     def getUserName(self, uname):
         if uname:
@@ -199,6 +200,12 @@ class Window(QWidget):
 
     def keyPressEvent(self, event):
         key = event.key()
+        if event.modifiers() == Qt.ShiftModifier:
+            if key == Qt.Key_G:
+                end = QKeyEvent(QEvent.KeyPress, Qt.Key_End, Qt.NoModifier)
+                QCoreApplication.sendEvent(self.view.page(), end)
+		    return
+
         if event.modifiers() == Qt.ControlModifier:
             if key == Qt.Key_F:
                 nextPage = QKeyEvent(QEvent.KeyPress, Qt.Key_PageDown, Qt.NoModifier)
@@ -207,6 +214,10 @@ class Window(QWidget):
                 prevPage = QKeyEvent(QEvent.KeyPress, Qt.Key_PageUp, Qt.NoModifier)
                 QCoreApplication.sendEvent(self.view, prevPage)
         else:
+            if key == Qt.Key_G:
+		        self.numPress = self.numPress + 1
+		        if self.numPress == 1:
+		            timer = QTimer.singleShot(400, self.check)
             if key == Qt.Key_J:
                 self.view.page().mainFrame().scroll(0,15)
             if key == Qt.Key_K:
@@ -231,7 +242,17 @@ class Window(QWidget):
             if key == Qt.Key_3:
                 self.view.navigateTo(3)
             
+    def check(self):
+	if self.numPress == 2:
+        home = QKeyEvent(QEvent.KeyPress, Qt.Key_Home, Qt.NoModifier)
+        QCoreApplication.sendEvent(self.view.page(), home)
+	    self.numPress = 0
+
 if __name__ == '__main__':
+
+    uname = 'li-ren-lin@hotmail.com'
+    password = ''
+
 
     app = QApplication(sys.argv)
     win = Window()
