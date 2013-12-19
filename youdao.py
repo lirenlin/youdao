@@ -235,6 +235,7 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     win = Window()
+    win.resize(600,550)
     win.show()
 
 
