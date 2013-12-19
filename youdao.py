@@ -5,6 +5,11 @@ import sys
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from PyQt4.QtWebKit import *
+from PyQt4.QtNetwork import *
+
+uname = ''
+password = ''
+
 
 class Browser(QWebView):
     unameAvailable = pyqtSignal(['QString'])
@@ -13,7 +18,7 @@ class Browser(QWebView):
         self.baseUrl = 'http://dict.youdao.com/search?q=%s&keyfrom=dict.index'
         self.uname = ''
         self.wordbook = None 
-        self.login = None
+        self.loginEle = None
         self.opWB = None
         self.navigate = list()
         QWebView.__init__(self)
@@ -65,6 +70,8 @@ class Browser(QWebView):
             for CLASS in cleanCLASS:
                 element = frame.findFirstElement("div[class='%s']"%CLASS)
                 element.setAttribute('style', 'display: none');
+            self.login(uname, password)
+
         elif 'dict.youdao.com' in currentURL:
             cleanID = ['custheme', 'topImgAd', 'c_footer', 'ads', \
                     'result_navigator', 'rel-search', 'container', 'results-contents'] 
@@ -85,7 +92,7 @@ class Browser(QWebView):
             if element:
                 ele = element.firstChild()
                 if ele.attribute('href'):
-                    self.login = ele
+                    self.loginEle = ele
                 elif ele.attribute('id') == 'uname':
                     self.uname = ele.toPlainText()
                     self.unameAvailable.emit(self.uname)
@@ -127,6 +134,19 @@ class Browser(QWebView):
                     evObj.initEvent( 'click', true, true ); \
                     this.dispatchEvent(evObj);")
 
+    def login(self, name, password):
+        #self.load(QUrl(''))
+        frame = self.page().mainFrame()
+        form = frame.findFirstElement("form[name='f']")
+        if form:
+            usernameEle = frame.findFirstElement("input[id='username']")
+            usernameEle.setAttribute('value', name)
+            passwordEle = frame.findFirstElement("input[id='password']")
+            passwordEle.setAttribute('value', password)
+            submit = frame.findFirstElement("input[class='login_btn']")
+            #submit.evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
+            #        evObj.initEvent( 'click', true, true ); \
+            #        this.dispatchEvent(evObj);")
 
 class Window(QWidget):
     def __init__(self):
@@ -151,6 +171,14 @@ class Window(QWidget):
         self.setWindowTitle(u'有道词典')
         self.numPress = 0
 
+    def login(self):
+        postData = QByteArray()
+        request = QNetworkRequest(QUrl('http://account.youdao.com/login?service=dict'))
+        request.setHeader(QNetworkRequest.ContentTypeHeader, "application/x-www-form-urlencoded")
+        postData.append('username=%s'%uname)
+        postData.append('password=%s'%password)
+        reply = self.mgr.post(request, postData)
+
     def getUserName(self, uname):
         if uname:
             title = u'%s @ 有道词典' % uname
@@ -163,10 +191,12 @@ class Window(QWidget):
             self.close()
 
         if text == 'login':
+            #self.login()
             if not self.view.uname:
-                self.view.login.evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
+                self.view.loginEle.evaluateJavaScript("var evObj = document.createEvent('MouseEvents'); \
                         evObj.initEvent( 'click', true, true ); \
                         this.dispatchEvent(evObj);")
+                #self.view.login(uname, password)
             else:
                 print 'Already loged in'
             self.cmd.hide()
@@ -204,7 +234,7 @@ class Window(QWidget):
             if key == Qt.Key_G:
                 end = QKeyEvent(QEvent.KeyPress, Qt.Key_End, Qt.NoModifier)
                 QCoreApplication.sendEvent(self.view.page(), end)
-		    return
+                return
 
         if event.modifiers() == Qt.ControlModifier:
             if key == Qt.Key_F:
@@ -243,15 +273,12 @@ class Window(QWidget):
                 self.view.navigateTo(3)
             
     def check(self):
-	if self.numPress == 2:
-        home = QKeyEvent(QEvent.KeyPress, Qt.Key_Home, Qt.NoModifier)
-        QCoreApplication.sendEvent(self.view.page(), home)
-	    self.numPress = 0
+        if self.numPress == 2:
+            home = QKeyEvent(QEvent.KeyPress, Qt.Key_Home, Qt.NoModifier)
+            QCoreApplication.sendEvent(self.view.page(), home)
+            self.numPress = 0
 
 if __name__ == '__main__':
-
-    uname = 'li-ren-lin@hotmail.com'
-    password = ''
 
 
     app = QApplication(sys.argv)
