@@ -15,7 +15,7 @@
 
 快捷键：
 ------
-j，k：	类vim导航
+j，k, gg, G：	类vim导航
 
 ctrl-f, ctrl-b：下一页，上一页
 
